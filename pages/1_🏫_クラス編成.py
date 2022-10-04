@@ -4,13 +4,19 @@ import pulp
 
 st.set_page_config(
     page_title="クラス編成 | OptimAz",
-    page_icon="🏫"
+    page_icon="images/favicon.png"
 )
 
-uploaded_files = st.file_uploader("Choose a CSV file", type=['csv',], accept_multiple_files=True)
+class_num = st.number_input('クラスの数を入力してください', min_value=1, max_value=26, value=8)
+
+options = st.multiselect(
+    '適用するルールを選択してください',
+    ['男女比が均等', '学力試験の平均点', 'リーダー気質の生徒', '特別な支援が必要な生徒', '特定ペアを同一クラスに割り当てない', ],
+    ['男女比が均等', '学力試験の平均点', 'リーダー気質の生徒', '特別な支援が必要な生徒', '特定ペアを同一クラスに割り当てない', ])
+
+uploaded_files = st.file_uploader("CSVファイルをアップロードしてください", type=['csv',], accept_multiple_files=True)
 if uploaded_files:
     with st.expander("データの確認", expanded=False):
-        st.caption("各データにつき最初の5行のみ表示します")
         for uploaded_file in uploaded_files:
             df = pd.read_csv(uploaded_file)
             if set(df.columns.values) == set(["student_id", "gender", "leader_flag", "support_flag", "score"]):
@@ -23,14 +29,14 @@ if uploaded_files:
             st.caption(uploaded_file.name)
             st.dataframe(df)
 
-    def solve(s_df, s_pair_df):
+    def solve(s_df, s_pair_df, class_num, options):
         prob = pulp.LpProblem('ClassAssignmentProblem', pulp.LpMaximize)
 
         # 生徒のリスト
         S = s_df['student_id'].tolist()
-
-        # クラスのリスト
-        C = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        
+        # クラスのリスト（A～Z）
+        C = [chr(65 + i) for i in range(class_num)]
 
         # 生徒とクラスのペアのリスト
         SC = [(s,c) for s in S for c in C]
@@ -93,8 +99,8 @@ if uploaded_files:
 
         # 初期クラス編成を作成
         s_df['score_rank'] = s_df['score'].rank(ascending=False, method='first')
-        class_dic = {0:'A', 1:'B', 2:'C', 3:'D', 4:'E', 5:'F', 6:'G', 7:'H'}
-        s_df['init_assigned_class'] = s_df['score_rank'].map(lambda x:x % 8).map(class_dic)
+        class_dic = dict(zip(range(class_num), C))
+        s_df['init_assigned_class'] = s_df['score_rank'].map(lambda x:x % class_num).map(class_dic)
         init_flag = {(s,c): 0 for s in S for c in C}
         for row in s_df.itertuples():
             init_flag[row.student_id, row.init_assigned_class] = 1
@@ -117,4 +123,9 @@ if uploaded_files:
             st.write('Num:', len(Ss))
             st.write('Student:', Ss)
     
-    solve(st.session_state["s_df"], st.session_state["s_pair_df"])
+    solve(st.session_state["s_df"], st.session_state["s_pair_df"], class_num, options)
+
+st.sidebar.header("アップロードするデータについて")
+st.sidebar.markdown("""
+                   
+""")

@@ -6,12 +6,10 @@ LOGGER = get_logger(__name__)
 
 st.set_page_config(
     page_title="ホーム | OptimAz",
-    page_icon="📗"
+    page_icon="images/favicon.png"
 )
 
-st.caption("数理最適化 Webアプリ")
-st.title("OptimAz")
-
+st.image("images/banner_image.png")
 st.info("👈 サイドバーから事例をを選んで Let's 数理最適化！")
 
 with st.expander("🏫 クラス編成", expanded=True):
